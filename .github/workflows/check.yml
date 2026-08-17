@@ -79,7 +79,7 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
           git pull --rebase origin main || true
-          git add state.json
+          git add -f state.json   # ← ここを -f に修正！
           
           git diff --quiet && git diff --staged --quiet || (
             git commit -m "Update state.json"
