@@ -35,7 +35,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
-          cache: 'pip'          # ← 公式のpipキャッシュを有効化
+          cache: 'pip'
 
       - name: Cache Playwright browsers
         uses: actions/cache@v4
@@ -54,10 +54,7 @@ jobs:
 
       - name: Install Playwright Browsers (Conditional)
         run: |
-          # キャッシュから復元されている場合はスキップまたは最小限にする
           playwright install chromium
-          
-          # 初回や依存関係が必要な場合のみ --with-deps を当てる形に切り分け
           if [ ! -d "$HOME/.cache/ms-playwright/chromium-*" ]; then
             playwright install --with-deps chromium
           fi
@@ -69,22 +66,18 @@ jobs:
         run: |
           python main.py
 
-      - name: Publish to Cloudflare Pages (Wrangler)
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: |
-          npx wrangler pages deploy . --project-name=ipad-notify --branch=main
-
-      - name: Commit and push state changes (state.json only)
+      - name: Commit and push changes (index.html & state.json)
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
+          git fetch origin
           git pull --rebase origin main || true
+          
           git add -f state.json
+          git add index.html
           
           git diff --quiet && git diff --staged --quiet || (
-            git commit -m "Update state.json"
+            git commit -m "Update stock status and index.html"
             git push --force-with-lease origin main
           )
