@@ -75,7 +75,7 @@ jobs:
           git pull --rebase origin main || true
           
           git add -f state.json
-          git add index.html
+          git add -f index.html   # ← ここを -f に修正！
           
           git diff --quiet && git diff --staged --quiet || (
             git commit -m "Update stock status and index.html"
