@@ -35,13 +35,13 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
+          cache: 'pip'          # ← 公式のpipキャッシュを有効化
 
-      - name: Cache pip and Playwright browsers
+      - name: Cache Playwright browsers
         uses: actions/cache@v4
+        id: playwright-cache
         with:
-          path: |
-            ~/.cache/pip
-            ~/.cache/ms-playwright
+          path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-${{ hashFiles('requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-playwright-
@@ -51,12 +51,15 @@ jobs:
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           pip install playwright
+
+      - name: Install Playwright Browsers (Conditional)
+        run: |
+          # キャッシュから復元されている場合はスキップまたは最小限にする
+          playwright install chromium
           
-          if [ ! -d "$HOME/.cache/ms-playwright" ]; then
-            echo "Playwright cache not found. Running full install with deps..."
+          # 初回や依存関係が必要な場合のみ --with-deps を当てる形に切り分け
+          if [ ! -d "$HOME/.cache/ms-playwright/chromium-*" ]; then
             playwright install --with-deps chromium
-          else
-            echo "Playwright browsers already cached. Skipping full install."
           fi
 
       - name: Run iPad stock checker
@@ -79,7 +82,7 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
           git pull --rebase origin main || true
-          git add -f state.json   # ← ここを -f に修正！
+          git add -f state.json
           
           git diff --quiet && git diff --staged --quiet || (
             git commit -m "Update state.json"
