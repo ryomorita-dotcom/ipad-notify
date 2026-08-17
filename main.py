@@ -3,6 +3,7 @@ import os
 import urllib.parse
 import urllib.request
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from dotenv import load_dotenv
 from playwright.sync_api import sync_playwright
 
@@ -28,7 +29,8 @@ def save_state(state):
         json.dump(state, f, ensure_ascii=False, indent=2)
 
 def generate_html(stock_results, newly_available, notification_msg):
-    now_str = datetime.now().strftime("%Y-%m-%d %H:%M (JST)")
+    # JST（Asia/Tokyo）の現在時刻を明示的に取得
+    now_str = datetime.now(ZoneInfo("Asia/Tokyo")).strftime("%Y-%m-%d %H:%M (JST)")
     
     rows_html = ""
     for model, status in stock_results.items():
