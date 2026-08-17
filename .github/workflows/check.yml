@@ -1,0 +1,89 @@
+name: Check iPad Stock & Deploy
+
+on:
+  workflow_dispatch:     # 手動実行および外部からのAPIトリガー用
+
+jobs:
+  run-checker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      actions: write
+    steps:
+      - name: Guard against concurrent runs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          CURRENT_RUN_ID="${{ github.run_id }}"
+          WORKFLOW_FILE="check.yml"
+          OTHER_RUNS=$(gh api repos/${{ github.repository }}/actions/workflows/$WORKFLOW_FILE/runs?status=in_progress \
+            --jq ".workflow_runs[] | select(.id != $CURRENT_RUN_ID) | .id" 2>/dev/null || echo "")
+          
+          if [ -n "$OTHER_RUNS" ]; then
+            echo "⚠️ Another run is already in progress. Canceling this new run..."
+            gh api -X POST repos/${{ github.repository }}/actions/runs/$CURRENT_RUN_ID/cancel
+            exit 0
+          else
+            echo "✅ Proceeding with this run."
+          fi
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Cache pip and Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          pip install playwright
+          
+          if [ ! -d "$HOME/.cache/ms-playwright" ]; then
+            echo "Playwright cache not found. Running full install with deps..."
+            playwright install --with-deps chromium
+          else
+            echo "Playwright browsers already cached. Skipping full install."
+          fi
+
+      - name: Run iPad stock checker
+        env:
+          PUSHOVER_USER: ${{ secrets.PUSHOVER_USER }}
+          PUSHOVER_TOKEN: ${{ secrets.PUSHOVER_TOKEN }}
+        run: |
+          python main.py
+
+      - name: Publish to Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: 'ipad-notify'
+          directory: '.'
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Commit and push state changes (state.json only)
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          git pull --rebase origin main || true
+          git add state.json
+          
+          git diff --quiet && git diff --staged --quiet || (
+            git commit -m "Update state.json"
+            git push --force-with-lease origin main
+          )
