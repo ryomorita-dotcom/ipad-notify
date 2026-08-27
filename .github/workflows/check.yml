@@ -1,4 +1,4 @@
-name: Check iPad Stock & Deploy
+name: Check Stock runner
 
 on:
   workflow_dispatch:     # 手動実行および外部からのAPIトリガー用
@@ -75,7 +75,7 @@ jobs:
           git pull --rebase origin main || true
           
           git add -f state.json
-          git add -f index.html   # ← ここを -f に修正！
+          git add -f index.html   # 強制追加により、gitignoreを回避してプッシュする
           
           git diff --quiet && git diff --staged --quiet || (
             git commit -m "Update stock status and index.html"

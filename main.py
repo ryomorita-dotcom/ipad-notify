@@ -1,5 +1,6 @@
 import json
 import os
+import importlib
 import urllib.parse
 import urllib.request
 from datetime import datetime
@@ -12,6 +13,7 @@ PUSHOVER_USER = os.getenv("PUSHOVER_USER")
 PUSHOVER_TOKEN = os.getenv("PUSHOVER_TOKEN")
 
 STATE_FILE = "state.json"
+TEMPLATE_FILE = "template.html"
 HTML_FILE = "index.html"
 
 def load_state():
@@ -20,160 +22,79 @@ def load_state():
     try:
         with open(STATE_FILE, "r", encoding="utf-8") as f:
             content = f.read().strip()
-            return json.loads(content) if content else {}
-    except:
+            data = json.loads(content) if content else {}
+            
+            # 旧state.json（フラット構造）からの移行対応
+            migrated = {}
+            for k, v in data.items():
+                if isinstance(v, dict):
+                    migrated[k] = v
+                else:
+                    if "softbank" not in migrated:
+                        migrated["softbank"] = {}
+                    migrated["softbank"][k] = v
+            return migrated
+    except Exception:
         return {}
 
 def save_state(state):
     with open(STATE_FILE, "w", encoding="utf-8") as f:
         json.dump(state, f, ensure_ascii=False, indent=2)
 
-def generate_html(stock_results, newly_available, notification_msg):
-    # JST（Asia/Tokyo）の現在時刻を明示的に取得
+def generate_html(all_site_results, site_configs, newly_available, notification_msg):
     now_str = datetime.now(ZoneInfo("Asia/Tokyo")).strftime("%Y-%m-%d %H:%M (JST)")
     
-    rows_html = ""
-    for model, status in stock_results.items():
-        is_available = "〇" in status
-        badge_class = "in-stock" if is_available else "out-of-stock"
-        rows_html += f"""
-            <tr>
-                <td>{model}</td>
-                <td><span class="badge {badge_class}">{status}</span></td>
-            </tr>
+    sections_html = ""
+    for site_key, categories in all_site_results.items():
+        site_url = site_configs.get(site_key, {}).get("url", "#")
+        site_name = site_key.upper()
+
+        rows_html = ""
+        for category, items in categories.items():
+            for model, status in items.items():
+                is_available = "〇" in status
+                badge_class = "in-stock" if is_available else "out-of-stock"
+                rows_html += f"""
+                    <tr>
+                        <td>{category}</td>
+                        <td>{model}</td>
+                        <td><span class="badge {badge_class}">{status}</span></td>
+                    </tr>
+                """
+
+        sections_html += f"""
+            <div class="section-title">📊 {site_name} 在庫状況</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>カテゴリ</th>
+                        <th>モデル名</th>
+                        <th>ステータス</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {rows_html}
+                </tbody>
+            </table>
+            <div style="margin-top: 10px; margin-bottom: 25px;">
+                <a class="btn-primary" href="{site_url}" target="_blank">{site_name}公式ページを開く ↗</a>
+            </div>
         """
 
     status_summary = f"新規在庫: 有り ({', '.join(newly_available)})" if newly_available else "新規在庫: 無し"
 
-    html_content = f"""<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>iPad 在庫チェッカー</title>
-    <style>
-        body {{
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            max-width: 680px;
-            margin: 40px auto;
-            padding: 0 20px;
-            color: #2c3e50;
-            background: #f8f9fa;
-        }}
-        h1 {{
-            font-size: 1.4rem;
-            margin: 0 0 5px 0;
-            color: #1a1a1a;
-        }}
-        .update-time {{
-            font-size: 0.85rem;
-            color: #666;
-            margin-bottom: 20px;
-        }}
-        .section-title {{
-            font-size: 1.05rem;
-            font-weight: bold;
-            margin: 25px 0 10px 0;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            border-bottom: 2px solid #eaeaea;
-            padding-bottom: 6px;
-        }}
-        table {{
-            width: 100%;
-            border-collapse: collapse;
-            background: #fff;
-            border-radius: 6px;
-            overflow: hidden;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            margin-top: 5px;
-        }}
-        th, td {{
-            padding: 12px 16px;
-            text-align: left;
-            border-bottom: 1px solid #edf2f7;
-            font-size: 0.95rem;
-        }}
-        th {{
-            background: #f1f5f9;
-            font-weight: 600;
-            color: #475569;
-        }}
-        tr:last-child td {{
-            border-bottom: none;
-        }}
-        .badge {{
-            padding: 4px 10px;
-            border-radius: 4px;
-            font-weight: bold;
-            font-size: 0.9rem;
-            display: inline-block;
-        }}
-        .in-stock {{
-            background: #eff6ff;
-            color: #2563eb;
-        }}
-        .out-of-stock {{
-            background: #fef2f2;
-            color: #dc2626;
-        }}
-        .notification-box {{
-            background: #fff;
-            padding: 14px 16px;
-            border-radius: 6px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            font-size: 0.9rem;
-            margin-top: 5px;
-        }}
-        .btn-primary {{
-            display: inline-block;
-            background: #2563eb;
-            color: #fff;
-            padding: 10px 20px;
-            border-radius: 6px;
-            text-decoration: none;
-            font-weight: bold;
-            font-size: 0.95rem;
-            box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
-            transition: background 0.2s;
-            margin-top: 5px;
-        }}
-        .btn-primary:hover {{
-            background: #1d4ed8;
-        }}
-    </style>
-</head>
-<body>
+    if os.path.exists(TEMPLATE_FILE):
+        with open(TEMPLATE_FILE, "r", encoding="utf-8") as f:
+            template_content = f.read()
 
-    <h1>iPad 在庫状況</h1>
-    <div class="update-time">最終更新: {now_str}</div>
+        html_content = template_content.replace("{{ update_time }}", now_str) \
+                                       .replace("{{ sections_html }}", sections_html) \
+                                       .replace("{{ status_summary }}", status_summary) \
+                                       .replace("{{ notification_msg }}", notification_msg)
+    else:
+        print(f"Warning: {TEMPLATE_FILE} が見つかりません。")
+        return
 
-    <div class="section-title">📊 指定モデルの在庫状況</div>
-    <table>
-        <thead>
-            <tr>
-                <th>モデル名</th>
-                <th>ステータス</th>
-            </tr>
-        </thead>
-        <tbody>
-            {rows_html}
-        </tbody>
-    </table>
-
-    <div class="section-title">🔔 通知ステータス</div>
-    <div class="notification-box">
-        <strong>{status_summary}</strong><br>
-        <span style="color: #555; font-size: 0.85rem;">{notification_msg}</span>
-    </div>
-
-    <div class="section-title">🔗 購入ページ</div>
-    <a class="btn-primary" href="https://www.softbank.jp/online-shop/products/stock/?device=ipad" target="_blank">公式購入ページを開く ↗</a>
-
-</body>
-</html>
-"""
     with open(HTML_FILE, "w", encoding="utf-8") as f:
         f.write(html_content)
 
@@ -186,7 +107,7 @@ def send_pushover_notification(message):
         "token": PUSHOVER_TOKEN,
         "user": PUSHOVER_USER,
         "message": message,
-        "title": "iPad在庫更新通知",
+        "title": "在庫更新通知",
     }).encode("utf-8")
     
     try:
@@ -195,75 +116,68 @@ def send_pushover_notification(message):
     except Exception:
         pass
 
-def check_ipad_stock():
+def check_all_stocks():
     with open("config.json", "r", encoding="utf-8") as f:
         config = json.load(f)
-    target_models = config.get("target_models", [])
+
+    site_configs = config.get("sites", {})
     state = load_state()
+
+    all_site_results = {}
+    newly_available = []
+    reasons = []
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
-        page.goto("https://www.softbank.jp/online-shop/products/stock/?device=ipad", wait_until="networkidle")
 
-        stock_results = page.evaluate("""(targets) => {
-            const results = {};
-            targets.forEach(target => {
-                let status = "× 在庫なし";
-                const allElements = Array.from(document.querySelectorAll('*'));
-                for (let el of allElements) {
-                    if (el.childNodes.length > 0) {
-                        for (let node of el.childNodes) {
-                            if (node.nodeType === Node.TEXT_NODE && node.nodeValue.includes(target)) {
-                                let cardContainer = el;
-                                for (let i = 0; i < 2; i++) if (cardContainer.parentElement) cardContainer = cardContainer.parentElement;
-                                if (cardContainer.innerText.includes("在庫あり")) status = "〇 在庫あり";
-                                else if (cardContainer.innerText.includes("在庫なし")) status = "× 在庫なし";
-                            }
-                        }
-                    }
-                }
-                results[target] = status;
-            });
-            return results;
-        }""", target_models)
+        for site_key, site_info in site_configs.items():
+            if not site_info.get("enabled", False):
+                continue
+
+            # 動的な進捗表示
+            print(f"{site_key}: scraping...", end="", flush=True)
+
+            try:
+                scraper_module = importlib.import_module(f"scrapers.{site_key}")
+                site_results = scraper_module.scrape(page, site_info)
+                all_site_results[site_key] = site_results
+                
+                # 完了時のタイムスタンプ取得（HH:MM:SS）
+                time_str = datetime.now(ZoneInfo("Asia/Tokyo")).strftime("%H:%M:%S")
+                print(f" -> DONE ({time_str})")
+            except ModuleNotFoundError:
+                print(" -> FAILED (Module not found)")
+                continue
+            except Exception as e:
+                print(f" -> FAILED ({e})")
+                continue
+
+            site_state = state.setdefault(site_key, {})
+            for category, items in site_results.items():
+                for model, status in items.items():
+                    prev_status = site_state.get(model)
+                    if status == "〇 在庫あり" and prev_status != "〇 在庫あり":
+                        newly_available.append(f"[{site_key}] {model}")
+                        if prev_status is None:
+                            reasons.append(f"[{site_key}] {model}: 初回検出（在庫あり）")
+                        else:
+                            reasons.append(f"[{site_key}] {model}: 在庫なし({prev_status}) → 在庫あり に変化")
+                    site_state[model] = status
+
         browser.close()
-
-    newly_available = []
-    reasons = []
-
-    for model, status in stock_results.items():
-        prev_status = state.get(model)
-        if status == "〇 在庫あり" and prev_status != "〇 在庫あり":
-            newly_available.append(model)
-            if prev_status is None:
-                reasons.append(f"{model}: 初回検出（在庫あり）")
-            else:
-                reasons.append(f"{model}: 在庫なし({prev_status}) → 在庫あり に変化")
-        state[model] = status
 
     save_state(state)
 
-    if newly_available:
-        status_msg = f"新規在庫: 有り ({', '.join(newly_available)})"
-    else:
-        status_msg = "新規在庫: 無し"
+    status_msg = f"新規在庫: 有り ({', '.join(newly_available)})" if newly_available else "新規在庫: 無し"
+    notification_msg = f"通知: 有り ({', '.join(reasons)})" if newly_available else "通知: 無し (前回から新規の在庫復活なし)"
 
-    details_msg = "\n".join([f"{model.ljust(20)} : {status}" for model, status in stock_results.items()])
+    generate_html(all_site_results, site_configs, newly_available, notification_msg)
 
-    if newly_available:
-        notification_msg = f"通知: 有り ({', '.join(reasons)})"
-    else:
-        notification_msg = "通知: 無し (前回から新規の在庫復活なし)"
-
-    generate_html(stock_results, newly_available, notification_msg)
-
-    console_output = f"[新規在庫有無]\n{status_msg}\n\n[指定モデルの在庫状況]\n{details_msg}\n\n[通知]\n{notification_msg}"
-    print(console_output)
+    print(f"\n[新規在庫有無]\n{status_msg}\n\n[通知]\n{notification_msg}")
 
     if newly_available:
-        full_message = f"{console_output}\n\n[URL]\nhttps://www.softbank.jp/online-shop/products/stock/?device=ipad"
-        send_pushover_notification(full_message)
+        send_pushover_notification(f"{status_msg}\n\n{notification_msg}")
 
 if __name__ == "__main__":
-    check_ipad_stock()
+    check_all_stocks()

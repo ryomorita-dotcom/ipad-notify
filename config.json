@@ -1,7 +1,15 @@
 {
-  "target_models": [
-    "11インチiPad Air（M3）",
-    "13インチiPad Air（M3）",
-    "iPad（A16）"
-  ]
+  "sites": {
+    "softbank": {
+      "enabled": true,
+      "url": "https://www.softbank.jp/online-shop/products/stock/?device=ipad",
+      "targets": {
+        "タブレット": [
+          "11インチiPad Air（M3）",
+          "13インチiPad Air（M3）",
+          "iPad（A16）"
+        ]
+      }
+    }
+  }
 }
