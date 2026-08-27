@@ -3,12 +3,23 @@
     "softbank": {
       "enabled": true,
       "url": "https://www.softbank.jp/online-shop/products/stock/?device=ipad",
+      "exclude_words": [],
       "targets": {
         "タブレット": [
           "11インチiPad Air（M3）",
           "13インチiPad Air（M3）",
           "iPad（A16）"
         ]
+      }
+    },
+    "hitachi": {
+      "enabled": true,
+      "url": "https://store.kadenfan.hitachi.co.jp/store/pages/refurbis.aspx",
+      "exclude_words": [
+        "乾燥機"
+      ],
+      "targets": {
+        "洗濯機": []
       }
     }
   }
