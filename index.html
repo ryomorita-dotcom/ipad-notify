@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>総合 在庫チェッカー</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            max-width: 680px;
+            margin: 40px auto;
+            padding: 0 20px;
+            color: #2c3e50;
+            background: #f8f9fa;
+        }
+        h1 {
+            font-size: 1.4rem;
+            margin: 0 0 5px 0;
+            color: #1a1a1a;
+        }
+        .update-time {
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 20px;
+        }
+        .section-title {
+            font-size: 1.05rem;
+            font-weight: bold;
+            margin: 25px 0 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border-bottom: 2px solid #eaeaea;
+            padding-bottom: 6px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #fff;
+            border-radius: 6px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            margin-top: 5px;
+        }
+        th, td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid #edf2f7;
+            font-size: 0.95rem;
+        }
+        th {
+            background: #f1f5f9;
+            font-weight: 600;
+            color: #475569;
+        }
+        tr:last-child td {
+            border-bottom: none;
+        }
+        .badge {
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            display: inline-block;
+        }
+        .in-stock {
+            background: #eff6ff;
+            color: #2563eb;
+        }
+        .out-of-stock {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+        .notification-box {
+            background: #fff;
+            padding: 14px 16px;
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+        .btn-primary {
+            display: inline-block;
+            background: #2563eb;
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 0.9rem;
+            box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+            transition: background 0.2s;
+        }
+        .btn-primary:hover {
+            background: #1d4ed8;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>総合 在庫状況</h1>
+    <div class="update-time">最終更新: 2026-08-27 13:41 (JST)</div>
+
+    
+            <div class="section-title">📊 SOFTBANK 在庫状況</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>カテゴリ</th>
+                        <th>モデル名</th>
+                        <th>ステータス</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    
+                    <tr>
+                        <td>タブレット</td>
+                        <td>11インチiPad Air（M3）</td>
+                        <td><span class="badge out-of-stock">× 在庫なし</span></td>
+                    </tr>
+                
+                    <tr>
+                        <td>タブレット</td>
+                        <td>13インチiPad Air（M3）</td>
+                        <td><span class="badge out-of-stock">× 在庫なし</span></td>
+                    </tr>
+                
+                    <tr>
+                        <td>タブレット</td>
+                        <td>iPad（A16）</td>
+                        <td><span class="badge in-stock">〇 在庫あり</span></td>
+                    </tr>
+                
+                </tbody>
+            </table>
+            <div style="margin-top: 10px; margin-bottom: 25px;">
+                <a class="btn-primary" href="https://www.softbank.jp/online-shop/products/stock/?device=ipad" target="_blank">SOFTBANK公式ページを開く ↗</a>
+            </div>
+        
+
+    <div class="section-title">🔔 通知ステータス</div>
+    <div class="notification-box">
+        <strong>新規在庫: 無し</strong><br>
+        <span style="color: #555; font-size: 0.85rem;">通知: 無し (前回から新規の在庫復活なし)</span>
+    </div>
+
+</body>
+</html>
