@@ -7,7 +7,7 @@
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            max-width: 680px;
+            max-width: 1000px;
             margin: 40px auto;
             padding: 0 20px;
             color: #2c3e50;
@@ -47,6 +47,7 @@
             text-align: left;
             border-bottom: 1px solid #edf2f7;
             font-size: 0.95rem;
+            white-space: nowrap;
         }
         th {
             background: #f1f5f9;
@@ -99,43 +100,66 @@
 <body>
 
     <h1>総合 在庫状況</h1>
-    <div class="update-time">最終更新: 2026-08-27 13:41 (JST)</div>
+    <div class="update-time">最終更新: 2026-08-27 05:09</div>
 
     
-            <div class="section-title">📊 SOFTBANK 在庫状況</div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>カテゴリ</th>
-                        <th>モデル名</th>
-                        <th>ステータス</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    
-                    <tr>
-                        <td>タブレット</td>
-                        <td>11インチiPad Air（M3）</td>
-                        <td><span class="badge out-of-stock">× 在庫なし</span></td>
-                    </tr>
+        <div class="section-title">📊 SOFTBANK 在庫状況</div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">カテゴリ</th>
+                    <th style="width: 55%;">モデル名</th>
+                    <th style="width: 20%;">ステータス</th>
+                </tr>
+            </thead>
+            <tbody>
+        <tr><td rowspan="3" style="vertical-align: middle; font-weight: 500;">タブレット</td>
+                    <td>11インチiPad Air（M3）</td>
+                    <td><span class="badge out-of-stock">× 在庫なし</span></td>
+                </tr>
+                <tr>
+                    <td>13インチiPad Air（M3）</td>
+                    <td><span class="badge out-of-stock">× 在庫なし</span></td>
+                </tr>
+                <tr>
+                    <td>iPad（A16）</td>
+                    <td><span class="badge in-stock">〇 在庫あり</span></td>
+                </tr>
                 
-                    <tr>
-                        <td>タブレット</td>
-                        <td>13インチiPad Air（M3）</td>
-                        <td><span class="badge out-of-stock">× 在庫なし</span></td>
-                    </tr>
+            </tbody>
+        </table>
+        <div style="margin-top: 10px; margin-bottom: 25px;">
+            <a href="https://www.softbank.jp/online-shop/products/stock/?device=ipad" target="_blank" class="btn-primary">SOFTBANK公式ページを開く ↗</a>
+        </div>
+        
+        <div class="section-title">📊 HITACHI 在庫状況</div>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 25%;">カテゴリ</th>
+                    <th style="width: 55%;">モデル名</th>
+                    <th style="width: 20%;">ステータス</th>
+                </tr>
+            </thead>
+            <tbody>
+        <tr><td rowspan="3" style="vertical-align: middle; font-weight: 500;">洗濯機</td>
+                    <td>【日立整備済み品】タテ型洗濯機（ ビートウォッシュ ）　BW-X120M W</td>
+                    <td><span class="badge in-stock">〇 在庫あり</span></td>
+                </tr>
+                <tr>
+                    <td>【日立整備済み品】タテ型洗濯機（ ビートウォッシュ ）　BW-V80M C</td>
+                    <td><span class="badge in-stock">〇 在庫あり</span></td>
+                </tr>
+                <tr>
+                    <td>【日立整備済み品】タテ型洗濯機（ ビートウォッシュ ）　BW-V80M W</td>
+                    <td><span class="badge in-stock">〇 在庫あり</span></td>
+                </tr>
                 
-                    <tr>
-                        <td>タブレット</td>
-                        <td>iPad（A16）</td>
-                        <td><span class="badge in-stock">〇 在庫あり</span></td>
-                    </tr>
-                
-                </tbody>
-            </table>
-            <div style="margin-top: 10px; margin-bottom: 25px;">
-                <a class="btn-primary" href="https://www.softbank.jp/online-shop/products/stock/?device=ipad" target="_blank">SOFTBANK公式ページを開く ↗</a>
-            </div>
+            </tbody>
+        </table>
+        <div style="margin-top: 10px; margin-bottom: 25px;">
+            <a href="https://store.kadenfan.hitachi.co.jp/store/pages/refurbis.aspx" target="_blank" class="btn-primary">HITACHI公式ページを開く ↗</a>
+        </div>
         
 
     <div class="section-title">🔔 通知ステータス</div>
