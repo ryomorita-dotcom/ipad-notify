@@ -1,7 +1,7 @@
 import json
 import os
 import importlib
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from playwright.sync_api import sync_playwright
 
 def main():
@@ -17,7 +17,9 @@ def main():
 
     all_results = {}
     
-    update_time = datetime.now().strftime("%Y-%m-%d %H:%M")
+    # 標準ライブラリで JST (UTC+9) のタイムスタンプを生成
+    JST = timezone(timedelta(hours=9))
+    update_time = datetime.now(JST).strftime("%Y-%m-%d %H:%M")
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
@@ -29,7 +31,7 @@ def main():
                 continue
 
             print(f"{site_name}: scraping...", end=" ", flush=True)
-            current_time = datetime.now().strftime("%H:%M:%S")
+            current_time = datetime.now(JST).strftime("%H:%M:%S")
             try:
                 scraper = importlib.import_module(f"scrapers.{site_name}")
                 result = scraper.scrape(page, site_config)
